@@ -1,71 +1,23 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Nov 19 20:29:46 2021
-
-@author: hmcarvalhovieira
-"""
-
-
 import numpy as np
-
 import xgboost as xgb
-
-from skmultiflow.core.base import BaseSKMObject, ClassifierMixin
-from river.drift import PageHinkley
-
+from skmultiflow.drift_detection import PageHinkley
 from skmultiflow.utils import get_dimensions
 
-
-class AdaptiveXGBoostRegressor(BaseSKMObject, ClassifierMixin):
+class AdaptiveXGBoostClassifier():
     _PUSH_STRATEGY = 'push'
     _REPLACE_STRATEGY = 'replace'
     _UPDATE_STRATEGIES = [_PUSH_STRATEGY, _REPLACE_STRATEGY]
 
     def __init__(self,
                  n_estimators=30,
-                 learning_rate=0.3,
+                 learning_rate=1,
                  max_depth=6,
                  max_window_size=1000,
                  min_window_size=None,
                  detect_drift=False,
-                 update_strategy='replace'):
-        """
-        Adaptive XGBoost Regressor.
-        Parameters
-        ----------
-        n_estimators: int (default=5)
-            The number of estimators in the ensemble.
-        learning_rate:
-            Learning rate, a.k.a eta.
-        max_depth: int (default = 6)
-            Max tree depth.
-        max_window_size: int (default=1000)
-            Max window size.
-        min_window_size: int (default=None)
-            Min window size. If this parameters is not set, then a fixed size
-            window of size ``max_window_size`` will be used.
-        detect_drift: bool (default=False)
-            If set will use a drift detector (Page Hinkley).
-        update_strategy: str (default='replace')
-            | The update strategy to use:
-            | 'push' - the ensemble resembles a queue
-            | 'replace' - oldest ensemble members are replaced by newer ones
-        Notes
-        -----
-        The Adaptive XGBoost [1]_ (AXGB) Regressor is an adaptation of the
-        XGBoost algorithm for evolving data streams. AXGB creates new members
-        of the ensemble from mini-batches of data as new data becomes
-        available.  The maximum ensemble  size is fixed, but learning does not
-        stop once this size is reached, the ensemble is updated on new data to
-        ensure consistency with the current data distribution. Inspired in the following work:
-            
-        References
-        ----------
-        .. [1] Montiel, Jacob, Mitchell, Rory, Frank, Eibe, Pfahringer,
-           Bernhard, Abdessalem, Talel, and Bifet, Albert. “AdaptiveXGBoost for
-           Evolving Data Streams”. In:IJCNN’20. International Joint Conference
-           on Neural Networks. 2020. Forthcoming.
-        """
+                 update_strategy='replace',
+                 threshold = 100):
+
         super().__init__()
         self.learning_rate = learning_rate
         self.n_estimators = n_estimators
@@ -78,6 +30,7 @@ class AdaptiveXGBoostRegressor(BaseSKMObject, ClassifierMixin):
         self._drift_detector = None
         self._X_buffer = np.array([])
         self._y_buffer = np.array([])
+        self.threshold = threshold
         self._model_idx = 0
         if update_strategy not in self._UPDATE_STRATEGIES:
             raise AttributeError("Invalid update_strategy: {}\n"
@@ -87,12 +40,10 @@ class AdaptiveXGBoostRegressor(BaseSKMObject, ClassifierMixin):
         self._configure()
 
     def _configure(self):
-        
         if self.update_strategy == self._PUSH_STRATEGY:
             self._ensemble = []
         elif self.update_strategy == self._REPLACE_STRATEGY:
             self._ensemble = [None] * self.n_estimators
-            
         self._reset_window_size()
         self._init_margin = 0.0
         self._boosting_params = {"verbosity": 0,
@@ -100,11 +51,10 @@ class AdaptiveXGBoostRegressor(BaseSKMObject, ClassifierMixin):
                                  "eta": self.learning_rate,
                                  "max_depth": self.max_depth}
         if self.detect_drift:
-            self._drift_detector = PageHinkley(threshold = 10000)
+            self._drift_detector = PageHinkley( threshold=self.threshold,min_instances = 200, alpha = 0.5)
        
 
-
-    def partial_fit(self, X, y):
+    def partial_fit(self, X, y, classes=None, sample_weight=None):
         """
         Partially (incrementally) fit the model.
         Parameters
@@ -113,8 +63,8 @@ class AdaptiveXGBoostRegressor(BaseSKMObject, ClassifierMixin):
             An array of shape (n_samples, n_features) with the data upon which
             the algorithm will create its model.
         y: Array-like
-            An array of shape (, n_samples) containing the 
-            targets for all samples in X.
+            An array of shape (, n_samples) containing the classification
+            targets for all samples in X. Only binary data is supported.
         classes: Not used.
         sample_weight: Not used.
         Returns
@@ -147,25 +97,22 @@ class AdaptiveXGBoostRegressor(BaseSKMObject, ClassifierMixin):
         if self.detect_drift:
             error = abs (self.predict(X)-y)
             # Check for warning
-            self._drift_detector.update(error)
+            self._drift_detector.add_element(error)
             # Check if there was a change
-            if self._drift_detector.change_detected():
-                print ('Detected drift')
+            if self._drift_detector.detected_change():
                 # Reset window size
                 self._reset_window_size()
                 if self.update_strategy == self._REPLACE_STRATEGY:
                     self._model_idx = 0
 
     def _adjust_window_size(self):
-        if self.window_size < self.max_window_size :
-            self.window_size = self.window_size * 2
-        # if the double window_size exceedes the max, the window size is set to max
-        if self.window_size > self.max_window_size:
+        if self.window_size ** 2 < self.max_window_size:
+            self.window_size *= 2
+        else:
             self.window_size = self.max_window_size
-            
-
+      
     def _reset_window_size(self):
-        if self.min_window_size: #if the parameter is initialized
+        if self.min_window_size:
             self.window_size = self.min_window_size
         else:
             self.window_size = self.max_window_size
@@ -174,17 +121,15 @@ class AdaptiveXGBoostRegressor(BaseSKMObject, ClassifierMixin):
         if self.update_strategy == self._REPLACE_STRATEGY:
             booster = self._train_booster(X, y, self._model_idx)
             # Update ensemble
-            
             self._ensemble[self._model_idx] = booster
             self._update_model_idx()
-        else:   # self.update_strategy == self._PUSH_STRATEGY
+        else:   
             booster = self._train_booster(X, y, len(self._ensemble))
             # Update ensemble
             if len(self._ensemble) == self.n_estimators:
                 self._ensemble.pop(0)
             self._ensemble.append(booster)
-
-
+           
     def _train_booster(self, X: np.ndarray, y: np.ndarray, last_model_idx: int):
         d_mini_batch_train = xgb.DMatrix(X, y)
         # Get margins from trees in the ensemble
@@ -234,12 +179,5 @@ class AdaptiveXGBoostRegressor(BaseSKMObject, ClassifierMixin):
                 return np.array(predicted).astype(float)
         # Ensemble is empty, return default values (0)
         return np.zeros(get_dimensions(X)[0])
-    
-  
-    def predict_proba(self, X):
-        """
-        Not implemented for this method.
-        """
-        raise NotImplementedError("predict_proba is not implemented for this method.")
 
-   
+  
