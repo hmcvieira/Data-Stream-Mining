@@ -52,7 +52,7 @@ class AdaptiveXGBoostClassifier():
                                  "max_depth": self.max_depth}
         if self.detect_drift:
             self._drift_detector = PageHinkley( threshold=self.threshold,min_instances = 200, alpha = 0.5)
-       
+
 
     def partial_fit(self, X, y, classes=None, sample_weight=None):
         """
@@ -106,11 +106,11 @@ class AdaptiveXGBoostClassifier():
                     self._model_idx = 0
 
     def _adjust_window_size(self):
-        if self.window_size ** 2 < self.max_window_size:
+        if self.window_size * 2 < self.max_window_size:
             self.window_size *= 2
         else:
             self.window_size = self.max_window_size
-      
+
     def _reset_window_size(self):
         if self.min_window_size:
             self.window_size = self.min_window_size
@@ -123,13 +123,13 @@ class AdaptiveXGBoostClassifier():
             # Update ensemble
             self._ensemble[self._model_idx] = booster
             self._update_model_idx()
-        else:   
+        else:
             booster = self._train_booster(X, y, len(self._ensemble))
             # Update ensemble
             if len(self._ensemble) == self.n_estimators:
                 self._ensemble.pop(0)
             self._ensemble.append(booster)
-           
+
     def _train_booster(self, X: np.ndarray, y: np.ndarray, last_model_idx: int):
         d_mini_batch_train = xgb.DMatrix(X, y)
         # Get margins from trees in the ensemble
@@ -172,7 +172,7 @@ class AdaptiveXGBoostClassifier():
                 d_test = xgb.DMatrix(X)
                 for i in range(trees_in_ensemble - 1):
                     margins = self._ensemble[i].predict(d_test, output_margin=True)
-        
+
                     d_test.set_base_margin(margin=margins)
                 predicted = self._ensemble[trees_in_ensemble - 1].predict(d_test)
 
@@ -180,4 +180,3 @@ class AdaptiveXGBoostClassifier():
         # Ensemble is empty, return default values (0)
         return np.zeros(get_dimensions(X)[0])
 
-  
