@@ -7,7 +7,7 @@
 
 ## General info
 This project is an implementation of XGBoost regressor for evolving datastreams. It was inspired in the classifier implementation by J. Montiel et al. (2020) https://jacobmontiel.github.io/publication/2020-axgb/.
-Its implementation is on python 3 and built on top of scikit-multiflow. 
+Our implementation is on python 3 and built on top of scikit-multiflow. 
 The code is opensource and available on github: https://github.com/hmcvieira/Data-Stream-Mining/tree/main/HW1/AXGBregression
 	
 ## Dependencies
