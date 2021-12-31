@@ -24,12 +24,12 @@ Install the required libraries.
 An example execution script is provided in axbg_regression_test.py. Replace the input stream, the evaluator settings and the model parameters by the desired values. 
 The model parameters are the following:
 
-*update_strategy: the ensemble update strategy ('push' or 'replace')
-*n_estimators: Number of members in the ensemble
-*learning_rate: Learning rate or eta
-*max_depth: Max depth for each tree in the ensemble
-*max_window_size: Max window size
-*min_window_size: Set to activate the dynamic window strategy
-*detect_drift: Enable/disable drift detection
-*threshold: pagehinkley threshold
+* update_strategy: the ensemble update strategy ('push' or 'replace')
+* n_estimators: Number of members in the ensemble
+* learning_rate: Learning rate or eta
+* max_depth: Max depth for each tree in the ensemble
+* max_window_size: Max window size
+* min_window_size: Set to activate the dynamic window strategy
+* detect_drift: Enable/disable drift detection
+* threshold: pagehinkley threshold
 
