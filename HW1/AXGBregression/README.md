@@ -1,4 +1,4 @@
-#Adaptive Extreme Gradient Boost Regressor for Evolving Datastreams
+# Adaptive Extreme Gradient Boost Regressor for Evolving Datastreams
 
 ## Table of contents
 * [General info](#general-info)
