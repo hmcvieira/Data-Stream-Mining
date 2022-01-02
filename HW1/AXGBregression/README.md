@@ -35,6 +35,7 @@ The model parameters are the following:
 
 Example:
 
+```
 from axgb_regression import AdaptiveXGBoostRegressor
 from skmultiflow.data import RegressionGenerator
 from skmultiflow.evaluation import EvaluatePrequential
@@ -98,3 +99,4 @@ evaluator = EvaluatePrequential(pretrain_size=0,
 evaluator.evaluate(stream=stream,
                    model=[AXGBp, AXGBr],
                    model_names=['AXGBp', 'AXGBr'])
+```
