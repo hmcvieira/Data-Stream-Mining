@@ -3,7 +3,7 @@ import xgboost as xgb
 from skmultiflow.drift_detection import PageHinkley
 from skmultiflow.utils import get_dimensions
 
-class AdaptiveXGBoostClassifier():
+class AdaptiveXGBoostRegressor():
     _PUSH_STRATEGY = 'push'
     _REPLACE_STRATEGY = 'replace'
     _UPDATE_STRATEGIES = [_PUSH_STRATEGY, _REPLACE_STRATEGY]
