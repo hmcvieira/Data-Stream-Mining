@@ -21,7 +21,7 @@ This project is dependent on the following python libraries:
 ## Setup
 
 Install the required libraries.
-An example execution script is provided in axbg_regression_test.py. Replace the input stream, the evaluator settings and the model parameters by the desired values. 
+An example execution script is provided in axgb_regression_test.py. Replace the input stream, the evaluator settings and the model parameters by the desired values. 
 The model parameters are the following:
 
 * update_strategy: the ensemble update strategy ('push' or 'replace')
