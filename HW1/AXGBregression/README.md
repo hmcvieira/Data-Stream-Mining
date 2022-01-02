@@ -13,8 +13,8 @@ The code is opensource and available on github: https://github.com/hmcvieira/Dat
 ## Dependencies
 This project is dependent on the following python libraries:
 
-* skmultiflow
-* xgboost
+* skmultiflow (>=0.5.3)
+* xgboost (>=0.90)
 * numpy
 
 	
