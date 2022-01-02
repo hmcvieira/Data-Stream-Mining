@@ -33,7 +33,7 @@ AXGBr = AdaptiveXGBoostRegressor(update_strategy='replace',
                                   min_window_size=min_window_size,
                                   detect_drift=detect_drift,
                                   threshold=threshold)
-arf_reg = AdaptiveRandomForestRegressor()
+
 #%% Generating the dataset
 stream_1 = RegressionGenerator(n_samples=2000, n_features=15, n_informative=8, random_state=5)
 stream_2 = RegressionGenerator(n_samples=3000, n_features=15, n_informative=10, random_state=5)
